@@ -1,0 +1,273 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Speaking Chatbot</title>
+  <link rel="shortcut icon" href="./PAGES/harshtech-logo.jpg" type="image/x-icon">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+      --chat-bg: #f0f0f0;
+    }
+    body.dark {
+      --bg: #121212;
+      --text: #f0f0f0;
+      --chat-bg: #1e1e1e;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .popup-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .popup-content img {
+      width: 80px;
+      margin-bottom: 10px;
+    }
+    .chat-container {
+      width: 95%;
+      max-width: 600px;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      display: none;
+      flex-direction: column;
+    }
+    .chat-box {
+      background: var(--chat-bg);
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .chat-box p {
+      margin: 5px 0;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .controls input, .controls button {
+      flex: 1 1 48%;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #ddd;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .progress {
+      height: 100%;
+      background: green;
+      width: 0%;
+      border-radius: 5px;
+      transition: width 0.5s;
+    }
+    @media (max-width: 480px) {
+      .controls input, .controls button {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="popup" id="popup">
+    <div class="popup-content">
+      <img src="./PAGES/loading3.gif" alt="Chatbot">
+      <h3>Enter your name</h3>
+      <input type="text" id="username" placeholder="Your name">
+      <button onclick="startChat()">Start</button>
+    </div>
+  </div>  <div class="chat-container" id="chat-container">
+    <h2 id="title"></h2>
+    <div class="progress-bar"><div id="progress" class="progress"></div></div>
+    <div class="chat-box" id="chat-box"></div>
+    <div class="controls">
+      <input type="text" id="user-input" placeholder="Type or speak...">
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="startListening()">🎤</button>
+      <button onclick="exportChat()">📄 Export</button>
+      <button onclick="toggleTheme()">🌓 Theme</button>
+      <button onclick="resetProgress()">🔁 Reset</button>
+    </div><br><br>
+     <center><small><font color="blue">&copy; 2025 HarshTech | All Rights Reserved</font></small></center>
+     <br><br><br>
+  </div>  
+  <script src="./PAGES/prevent.js"></script>
+ 
+  <script>
+    let userName = "";
+    let questionIndex = 0;
+    let quizIndex = 0;
+    let chatHistory = [];
+    let quizStarted = false;
+    const totalSteps = 12; // 7 questions + 5 quiz
+
+    const questions = [
+      "What's your name?",
+      "How are you today?",
+      "Describe your routine.",
+      "What do you do for fun?",
+      "Your favorite dish?",
+      "Why learn English?",
+      "Well done! Let's test your grammar."
+    ];
+
+    const marathiTips = [
+      "'My name is...' वापरा",
+      "'I am happy/sad' असे सांगा",
+      "क्रियापद वापरा – 'I wake up...'",
+      "'I like to play/read' वापरा",
+      "'My favorite food is...'",
+      "'To speak well', 'For job...'",
+      "सराव पूर्ण. आता चाचणी!"
+    ];
+
+    const quiz = [
+      { q: "He go or He goes?", a: "He goes" },
+      { q: "I am good or I am fine?", a: "I am fine" },
+      { q: "She do or She does?", a: "She does" },
+      { q: "They was or They were?", a: "They were" },
+      { q: "I doesn't or I don't?", a: "I don't" }
+    ];
+
+    function startChat() {
+      const nameInput = document.getElementById("username").value.trim();
+      if (!nameInput) return alert("Please enter your name");
+      userName = nameInput;
+      document.getElementById("popup").style.display = "none";
+      document.getElementById("chat-container").style.display = "flex";
+      document.getElementById("title").innerText = `Welcome, ${userName}`;
+      sendBotMessage(questions[0]);
+      sendBotMessage(marathiTips[0], true);
+      updateProgress();
+    }
+
+    function sendBotMessage(text, marathi = false) {
+      const box = document.getElementById("chat-box");
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>Bot:</strong> ${text}`;
+      if (marathi) p.style.color = "#6d4c41";
+      box.appendChild(p);
+      box.scrollTop = box.scrollHeight;
+      chatHistory.push(`Bot: ${text}`);
+      speak(text);
+    }
+
+    function sendUserMessage(text) {
+      const box = document.getElementById("chat-box");
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>${userName}:</strong> ${text}`;
+      p.style.color = "blue";
+      box.appendChild(p);
+      box.scrollTop = box.scrollHeight;
+      chatHistory.push(`${userName}: ${text}`);
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("user-input");
+      const text = input.value.trim();
+      if (!text) return;
+      sendUserMessage(text);
+      input.value = "";
+      if (quizStarted) return handleQuiz(text);
+      questionIndex++;
+      if (questionIndex < questions.length) {
+        sendBotMessage(questions[questionIndex]);
+        sendBotMessage(marathiTips[questionIndex], true);
+      } else {
+        startQuiz();
+      }
+      updateProgress();
+    }
+
+    function handleQuiz(answer) {
+      const correct = quiz[quizIndex].a.toLowerCase();
+      if (answer.toLowerCase().includes(correct)) {
+        sendBotMessage("✅ Correct!");
+      } else {
+        sendBotMessage(`❌ Correct answer: ${quiz[quizIndex].a}`);
+      }
+      quizIndex++;
+      if (quizIndex < quiz.length) {
+        sendBotMessage(quiz[quizIndex].q);
+      } else {
+        sendBotMessage("🎉 Quiz complete! Great job!");
+        quizStarted = false;
+      }
+      updateProgress();
+    }
+
+    function startQuiz() {
+      quizStarted = true;
+      quizIndex = 0;
+      sendBotMessage("Grammar Quiz Time!");
+      sendBotMessage(quiz[0].q);
+    }
+
+    function exportChat() {
+      const blob = new Blob([chatHistory.join("\n")], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${userName}_chat.txt`;
+      a.click();
+    }
+
+    function updateProgress() {
+      const steps = questionIndex + quizIndex;
+      const percent = Math.min((steps / totalSteps) * 100, 100);
+      document.getElementById("progress").style.width = percent + "%";
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+    }
+
+    function resetProgress() {
+      location.reload();
+    }
+
+    function startListening() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "en-US";
+      recognition.start();
+      recognition.onresult = e => {
+        document.getElementById("user-input").value = e.results[0][0].transcript;
+        sendMessage();
+      };
+    }
+
+    function speak(text) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-US";
+      speechSynthesis.speak(utter);
+    }
+  </script></body>
+</html>
